@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RABOlab — интерактивная лаборатория по физике</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f7f6;
+            --text: #333;
+            --white: #ffffff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        header { position: relative; text-align: center; padding: 50px 20px; background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; }
+        header p { opacity: 0.8; margin-top: 10px; font-size: 1.1rem; }
+
+        .social-links {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        .social-links a {
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .social-links a:hover {
+            transform: scale(1.15);
+            color: var(--accent);
+        }
+        .social-links svg {
+            width: 32px;
+            height: 32px;
+            fill: currentColor;
+        }
+
+        .container { flex: 1; max-width: 1200px; margin: 0 auto; padding: 20px; width: 100%; box-sizing: border-box; }
+
+        .section-title { 
+            background: var(--white); 
+            padding: 15px 20px; 
+            border-left: 6px solid var(--accent); 
+            margin: 40px 0 20px 0; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid transparent;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        
+        .card .number { font-weight: bold; color: var(--accent); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 8px; }
+        .card h3 { margin: 0 0 10px 0; color: var(--primary); font-size: 1.15rem; line-height: 1.4; }
+        .card .btn { margin-top: auto; background: var(--accent); color: white; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
+
+        footer { background: var(--primary); color: white; text-align: center; padding: 30px 20px; margin-top: 50px; }
+        footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .social-links {
+                top: 15px;
+                right: 15px;
+            }
+            .social-links svg {
+                width: 26px;
+                height: 26px;
+            }
+            header {
+                padding-top: 60px;
+            }
+        }
+
+        .auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .auth-box {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .auth-box h2 { color: var(--primary); margin-top: 0; margin-bottom: 20px; }
+        .auth-box input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border: 1px solid #ccc; border-radius: 6px;
+            box-sizing: border-box; font-size: 1rem;
+        }
+        .auth-box button {
+            width: 100%; padding: 12px; background: var(--accent);
+            color: white; border: none; border-radius: 6px;
+            font-size: 1rem; font-weight: bold; cursor: pointer;
+            transition: background 0.3s;
+        }
+        .auth-box button:hover { background: #2980b9; }
+        .toggle-link { margin-top: 15px; color: var(--accent); cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+        .toggle-link:hover { text-decoration: underline; }
+        .msg-box { font-size: 0.9rem; margin-bottom: 15px; min-height: 1.2em; font-weight: 500; }
+        .msg-error { color: #e74c3c; }
+        .msg-success { color: #2ecc71; }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body>
+
+<div id="auth-overlay" class="auth-overlay">
+    <div class="auth-box" id="login-box">
+        <h2>Вход в RABOlab</h2>
+        <div id="login-msg" class="msg-box msg-error"></div>
+        <input type="text" id="login-user" placeholder="Логин">
+        <input type="password" id="login-pass" placeholder="Пароль">
+        <button onclick="login()">Войти</button>
+        <p class="toggle-link" onclick="toggleAuth('register')">Добавить ученика (только для учителя)</p>
+    </div>
+
+    <div class="auth-box" id="register-box" style="display: none;">
+        <h2>Регистрация ученика</h2>
+        <div id="reg-msg" class="msg-box"></div>
+        <input type="text" id="reg-user" placeholder="Логин нового ученика">
+        <input type="password" id="reg-pass" placeholder="Пароль">
+        <input type="password" id="reg-code" placeholder="Код доступа учителя">
+        <button onclick="register()">Зарегистрировать</button>
+        <p class="toggle-link" onclick="toggleAuth('login')">Вернуться ко входу</p>
+    </div>
+</div>
+
+<div id="main-content" style="display: none;">
+
+<header>
+    <button class="logout-btn" onclick="logout()">Выйти</button>
+    <!-- Контакт: Max -->
+    <div class="social-links">
+        <a href="https://max.ru/u/f9LHodD0cOLu7Yilvxs6_B3VZhQ3Nc45Awn4OvSiF8wBrmr1dEPNWnfaTrI" target="_blank" rel="noopener noreferrer" title="Написать в Max">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm4.918 7.049l-1.674 7.89c-.123.554-.453.691-.917.43l-2.54-1.874-1.225 1.18c-.136.135-.249.249-.51.249l.181-2.584 4.693-4.238c.204-.181-.044-.282-.316-.1L7.7 14.499l-2.496-.779c-.542-.17-.553-.542.113-.803l9.724-3.749c.452-.164.848.1.877.881z"/>
+            </svg>
+        </a>
+    </div>
+
+    <h1>RABOlab</h1>
+    <p>Интерактивная онлайн-лаборатория по физике</p>
+</header>
+
+<div class="container">
+
+    <div class="section-title">Механика: Кинематика и Динамика</div>
+    <div class="grid">
+        <a href="labs/lr1.html" class="card"><span class="number">№1</span><h3>Равномерное движение тела</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr2.html" class="card"><span class="number">№2</span><h3>Определение ускорения и коэффициента трения</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr3.html" class="card"><span class="number">№3</span><h3>Второй закон Ньютона</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr4.html" class="card"><span class="number">№4</span><h3>Тело, брошенное горизонтально</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr7.html" class="card"><span class="number">№7</span><h3>Связь скорости и времени</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr8.html" class="card"><span class="number">№8</span><h3>Зависимость скорости от пути</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr9.html" class="card"><span class="number">№9</span><h3>Трение и материалы</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr14.html" class="card"><span class="number">№14</span><h3>Коэффициент трения</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr15.html" class="card"><span class="number">№15</span><h3>Движение связанных тел</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr30.html" class="card"><span class="number">№30</span><h3>Закон Гука</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr31.html" class="card"><span class="number">№31</span><h3>Сила трения скольжения</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr32.html" class="card"><span class="number">№32</span><h3>Сложение сил, направленных под углом</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr35.html" class="card"><span class="number">№33</span><h3>Изучение движения тела по наклонному желобу</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Законы сохранения и Статика</div>
+    <div class="grid">
+        <a href="labs/lr16.html" class="card"><span class="number">№16</span><h3>Неупругое столкновение</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr17.html" class="card"><span class="number">№17</span><h3>Расталкивание тележек</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr18.html" class="card"><span class="number">№18</span><h3>Упругое столкновение</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr21.html" class="card"><span class="number">№21</span><h3>Закон сохранения энергии</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr28.html" class="card"><span class="number">№28</span><h3>Равновесие рычага</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr29.html" class="card"><span class="number">№29</span><h3>КПД наклонной плоскости</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Механические колебания</div>
+    <div class="grid">
+        <a href="labs/lr19.html" class="card"><span class="number">№19</span><h3>Столкновение шаров-маятников</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr22.html" class="card"><span class="number">№22</span><h3>Энергия при колебаниях</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr23.html" class="card"><span class="number">№23</span><h3>Период и амплитуда</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr24.html" class="card"><span class="number">№24</span><h3>Период и масса груза</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr25.html" class="card"><span class="number">№25</span><h3>Период и длина нити</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr36.html" class="card"><span class="number">№26</span><h3>Скорость поверхностной волны</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Гидростатика</div>
+    <div class="grid">
+        <a href="labs/lr26.html" class="card"><span class="number">№27</span><h3>Закон Архимеда</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr27.html" class="card"><span class="number">№28</span><h3>Условия плавания тел</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Оптика</div>
+    <div class="grid">
+        <a href="labs/lr5.html" class="card"><span class="number">№5</span><h3>Определение показателя преломления стекла</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr51.html" class="card"><span class="number">№6</span><h3>Определение показателя преломления 2 стекла</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr39.html" class="card"><span class="number">№11</span><h3>Определение фокусного расстояния тонкой линзы</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Электростатика и Электричество</div>
+    <div class="grid">
+        <a href="labs/la.html" class="card"><span class="number">№29</span><h3>Закон Ома</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr37.html" class="card"><span class="number">№30</span><h3>Вольт-амперная характеристика полупроводникового диода</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr38.html" class="card"><span class="number">№31</span><h3>Измерение электрического заряда одновалентного иона</h3><div class="btn">Запустить</div></a>
+    </div>
+
+    <div class="section-title">Физический практикум</div>
+    <div class="grid">
+        <a href="labs/lr40.html" class="card"><span class="number">№1</span><h3>Изучение движения тела по окружности под действием сил упругости и тяжести</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr41.html" class="card"><span class="number">№2</span><h3>Измерение массы тела методом гидростатического взвешивания</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr42.html" class="card"><span class="number">№3</span><h3>Измерение модуля упругости (модуля Юнги) резины</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr43.html" class="card"><span class="number">№4</span><h3>Изучение колебаний математического маятника</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr44.html" class="card"><span class="number">№5</span><h3>Изучение колебаний пружинного маятника</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr45.html" class="card"><span class="number">№6</span><h3>Снятие вольт-амперной характеристики резистора</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr46.html" class="card"><span class="number">№7</span><h3>Измерение влажности воздуха</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr47.html" class="card"><span class="number">№8</span><h3>Определение длины волны светового излучения с помощью дифракционной решётки</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr48.html" class="card"><span class="number">№9</span><h3>Нахождение ярких звезд и некоторых созвездий осеннего, зимнего и весеннего неба в данной местности</h3><div class="btn">Запустить</div></a>
+        <a href="labs/lr49.html" class="card"><span class="number">№10</span><h3>Определение скорости света в различных веществах с помощью сферических линз</h3><div class="btn">Запустить</div></a>
+    </div>
+
+</div>
+
+<footer>
+    <p>© 2026 RABOlab — Виртуальные работы для учителей и учеников</p>
+    <p>Разработчик: <a href="mailto:zhuldyzdaryn@gmail.com">zhuldyzdaryn@gmail.com</a></p>
+</footer>
+
+</div>
+
+<script>
+    const SECRET_CODE = "8888";
+    
+    let users = [
+        { username: "Fizika", password: "VLR-2026" }
+    ];
+
+    function toggleAuth(view) {
+        document.getElementById('login-box').style.display = view === 'login' ? 'block' : 'none';
+        document.getElementById('register-box').style.display = view === 'register' ? 'block' : 'none';
+        document.getElementById('login-msg').innerText = '';
+        document.getElementById('reg-msg').innerText = '';
+    }
+
+    function login() {
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        const msgBox = document.getElementById('login-msg');
+
+        if(!user || !pass) {
+            msgBox.innerText = "Введите логин и пароль";
+            return;
+        }
+
+        const foundUser = users.find(u => u.username === user && u.password === pass);
+        if (foundUser) {
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+            msgBox.innerText = '';
+        } else {
+            msgBox.innerText = "Неверный логин или пароль";
+        }
+    }
+
+    function register() {
+        const user = document.getElementById('reg-user').value.trim();
+        const pass = document.getElementById('reg-pass').value;
+        const code = document.getElementById('reg-code').value;
+        const msgBox = document.getElementById('reg-msg');
+
+        if(!user || !pass || !code) {
+            msgBox.className = 'msg-box msg-error';
+            msgBox.innerText = "Заполните все поля";
+            return;
+        }
+
+        if(code !== SECRET_CODE) {
+            msgBox.className = 'msg-box msg-error';
+            msgBox.innerText = "Неверный код доступа";
+            return;
+        }
+
+        if(users.find(u => u.username === user)) {
+            msgBox.className = 'msg-box msg-error';
+            msgBox.innerText = "Пользователь с таким логином уже существует";
+            return;
+        }
+
+        users.push({ username: user, password: pass });
+        
+        msgBox.className = 'msg-box msg-success';
+        msgBox.innerText = "Ученик успешно зарегистрирован!";
+        
+        document.getElementById('reg-user').value = '';
+        document.getElementById('reg-pass').value = '';
+        document.getElementById('reg-code').value = '';
+
+        setTimeout(() => {
+            toggleAuth('login');
+        }, 1500);
+    }
+
+    function logout() {
+        document.getElementById('auth-overlay').style.display = 'flex';
+        document.getElementById('main-content').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
